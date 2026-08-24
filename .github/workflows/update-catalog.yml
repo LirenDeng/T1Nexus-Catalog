@@ -1,4 +1,4 @@
-name: Update Catalog Data
+name: Build and Deploy Catalog
 
 on:
   push:
@@ -6,14 +6,23 @@ on:
       - main
     paths:
       - "catalog.xlsx"
+      - "index.html"
       - "convert_catalog.py"
       - ".github/workflows/update-catalog.yml"
 
+  workflow_dispatch:
+
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  update-catalog:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,16 +40,30 @@ jobs:
       - name: Convert Excel to website data
         run: python convert_catalog.py
 
-      - name: Commit updated catalog JSON
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare website files
         run: |
-          if git diff --quiet catalog-data.json; then
-            echo "No catalog changes to commit."
-            exit 0
-          fi
+          mkdir _site
+          cp index.html _site/
+          cp catalog-data.json _site/
+          touch _site/.nojekyll
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
 
-          git add catalog-data.json
-          git commit -m "Update catalog data from Excel"
-          git push
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
