@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalog Manager</title>
+
+  <!-- SheetJS: read and write Excel files in the browser -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .container {
+      width: min(1400px, 94%);
+      margin: 32px auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .header p {
+      margin: 6px 0 0;
+      color: #6b7280;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: auto minmax(170px, 230px) minmax(220px, 1fr) minmax(190px, 250px) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 9px;
+      background: white;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: #2563eb;
+    }
+
+    button,
+    .file-label {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .secondary {
+      background: #111827;
+      color: white;
+    }
+
+    .light {
+      background: #eef2f7;
+      color: #1f2937;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .stats {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      color: #4b5563;
+      font-size: 14px;
+    }
+
+    .add-form {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4b5563;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 65vh;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f9fafb;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    @media (max-width: 900px) {
+      .toolbar,
+      .add-form {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Catalog Manager</h1>
+        <p>Import an Excel catalog, choose a worksheet, and load only Excel columns B and E.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="toolbar">
+        <label class="file-label primary">
+          Import Excel
+          <input id="excelFile" type="file" accept=".xlsx,.xls,.xlsm,.csv" />
+        </label>
+
+        <select id="sheetSelect" disabled>
+          <option value="">Choose worksheet</option>
+        </select>
+
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Search Part Number or Form Factor..."
+        />
+
+        <select id="sortSelect">
+          <option value="">Sort items</option>
+          <option value="pn-asc">Part Number: A → Z</option>
+          <option value="pn-desc">Part Number: Z → A</option>
+          <option value="form-asc">Form Factor: A → Z</option>
+          <option value="form-desc">Form Factor: Z → A</option>
+        </select>
+
+        <button id="exportButton" class="secondary">Export Excel</button>
+      </div>
+
+      <div class="stats">
+        <span>Total items: <strong id="totalCount">0</strong></span>
+        <span>Showing: <strong id="visibleCount">0</strong></span>
+        <span>Worksheet: <strong id="sheetName">None</strong></span>
+      </div>
+
+      <div id="message" class="message">
+        Import an Excel file to begin.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top: 0;">Add New Item</h2>
+
+      <form id="addItemForm" class="add-form">
+        <div class="field">
+          <label for="partNumber">Part Number</label>
+          <input id="partNumber" type="text" placeholder="Example: T1-QSFP28-100G-SR4" required />
+        </div>
+
+        <div class="field">
+          <label for="formFactor">Form Factor</label>
+          <input id="formFactor" type="text" placeholder="Example: QSFP28" />
+        </div>
+
+        <button type="submit" class="primary">Add Item</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div id="tableContainer">
+        <div class="empty">No catalog loaded yet.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let catalogItems = [];
+    let headers = [];
+    let currentSheetName = "";
+    let currentWorkbook = null;
+
+    // Detected catalog columns
+    let partNumberColumn = "";
+    let formFactorColumn = "";
+
+    const excelFile = document.getElementById("excelFile");
+    const sheetSelect = document.getElementById("sheetSelect");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const exportButton = document.getElementById("exportButton");
+    const addItemForm = document.getElementById("addItemForm");
+
+    const totalCount = document.getElementById("totalCount");
+    const visibleCount = document.getElementById("visibleCount");
+    const sheetName = document.getElementById("sheetName");
+    const tableContainer = document.getElementById("tableContainer");
+    const message = document.getElementById("message");
+
+    function normalizeHeader(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_\-]+/g, " ")
+        .replace(/\s+/g, " ");
+    }
+
+    function detectColumn(possibleNames) {
+      const normalizedPossible = possibleNames.map(normalizeHeader);
+
+      return headers.find(header =>
+        normalizedPossible.includes(normalizeHeader(header))
+      ) || "";
+    }
+
+    function detectCatalogColumns() {
+      partNumberColumn = detectColumn([
+        "part number",
+        "part no",
+        "part no.",
+        "pn",
+        "t1 pn",
+        "sku",
+        "item number",
+        "partnumber"
+      ]);
+
+      formFactorColumn = detectColumn([
+        "form factor",
+        "formfactor",
+        "form-factor",
+        "form",
+        "ff"
+      ]);
+    }
+
+    function ensureDefaultColumns() {
+      detectCatalogColumns();
+
+      if (!partNumberColumn) {
+        partNumberColumn = "Part Number";
+      }
+
+      if (!formFactorColumn) {
+        formFactorColumn = "Form Factor";
+      }
+    }
+
+    excelFile.addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const data = await file.arrayBuffer();
+        currentWorkbook = XLSX.read(data);
+
+        sheetSelect.innerHTML = '<option value="">Choose worksheet</option>';
+
+        currentWorkbook.SheetNames.forEach(sheet => {
+          const option = document.createElement("option");
+          option.value = sheet;
+          option.textContent = sheet;
+          sheetSelect.appendChild(option);
+        });
+
+        sheetSelect.disabled = false;
+
+        catalogItems = [];
+        headers = [];
+        currentSheetName = "";
+        sheetName.textContent = "None";
+        totalCount.textContent = "0";
+        visibleCount.textContent = "0";
+        tableContainer.innerHTML =
+          '<div class="empty">Choose a worksheet to load its catalog items.</div>';
+
+        message.textContent =
+          `Loaded "${file.name}". Choose one of its ${currentWorkbook.SheetNames.length} worksheet(s).`;
+      } catch (error) {
+        console.error(error);
+        currentWorkbook = null;
+        sheetSelect.disabled = true;
+        message.textContent = "Could not read the Excel file. Check the file and try again.";
+      }
+    });
+
+    sheetSelect.addEventListener("change", () => {
+      const selectedSheet = sheetSelect.value;
+
+      if (!selectedSheet || !currentWorkbook) {
+        return;
+      }
+
+      currentSheetName = selectedSheet;
+      const worksheet = currentWorkbook.Sheets[currentSheetName];
+
+      // Read the sheet as rows so we can load exact Excel columns.
+      // Column B = index 1
+      // Column E = index 4
+      const rows = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        defval: ""
+      });
+
+      if (rows.length === 0) {
+        catalogItems = [];
+        headers = ["Column B", "Column E"];
+      } else {
+        // Use the first row as the displayed header when available.
+        const columnBHeader = String(rows[0][1] || "Column B").trim() || "Column B";
+        const columnEHeader = String(rows[0][4] || "Column E").trim() || "Column E";
+
+        headers = [columnBHeader, columnEHeader];
+        partNumberColumn = columnBHeader;
+        formFactorColumn = columnEHeader;
+
+        catalogItems = rows
+          .slice(1)
+          .map(row => ({
+            [columnBHeader]: row[1] ?? "",
+            [columnEHeader]: row[4] ?? ""
+          }))
+          .filter(item =>
+            String(item[columnBHeader]).trim() !== "" ||
+            String(item[columnEHeader]).trim() !== ""
+          );
+      }
+
+      searchInput.value = "";
+      sortSelect.value = "";
+
+      sheetName.textContent = currentSheetName;
+      message.textContent =
+        `Loaded worksheet "${currentSheetName}". Only Excel columns B and E were imported.`;
+
+      renderCatalog();
+    });
+
+    searchInput.addEventListener("input", renderCatalog);
+    sortSelect.addEventListener("change", renderCatalog);
+
+    function getNumericQuantity(item) {
+      const raw = item[quantityColumn];
+      const value = Number(String(raw ?? "").replace(/,/g, "").trim());
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function extractRate(value) {
+      const text = String(value ?? "").toUpperCase().replace(/\s+/g, "");
+      const match = text.match(/([\d.]+)\s*(T|G|M|K)?/);
+      if (!match) return 0;
+
+      const number = Number(match[1]);
+      const unit = match[2] || "";
+
+      const multiplier = {
+        "T": 1000000,
+        "G": 1000,
+        "M": 1,
+        "K": 0.001
+      }[unit] ?? 1;
+
+      return number * multiplier;
+    }
+
+    function getFilteredAndSortedItems() {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      let result = [...catalogItems];
+
+      if (searchTerm) {
+        result = result.filter(item => {
+          return [
+            item[partNumberColumn],
+            item[formFactorColumn]
+          ].some(value =>
+            String(value ?? "").toLowerCase().includes(searchTerm)
+          );
+        });
+      }
+
+      const alpha = (a, b, column) =>
+        String(a[column] ?? "").localeCompare(
+          String(b[column] ?? ""),
+          undefined,
+          { numeric: true, sensitivity: "base" }
+        );
+
+      switch (sortSelect.value) {
+        case "pn-asc":
+          result.sort((a, b) => alpha(a, b, partNumberColumn));
+          break;
+        case "pn-desc":
+          result.sort((a, b) => alpha(b, a, partNumberColumn));
+          break;
+        case "form-asc":
+          result.sort((a, b) => alpha(a, b, formFactorColumn));
+          break;
+        case "form-desc":
+          result.sort((a, b) => alpha(b, a, formFactorColumn));
+          break;
+      }
+
+      return result;
+    }
+
+    function getDisplayHeaders() {
+      return headers;
+    }
+
+    function renderCatalog() {
+      const items = getFilteredAndSortedItems();
+
+      totalCount.textContent = catalogItems.length;
+      visibleCount.textContent = items.length;
+
+      if (headers.length === 0) {
+        tableContainer.innerHTML =
+          '<div class="empty">No catalog loaded yet.</div>';
+        return;
+      }
+
+      const displayHeaders = getDisplayHeaders();
+      const table = document.createElement("table");
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      displayHeaders.forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      items.forEach(item => {
+        const row = document.createElement("tr");
+
+        displayHeaders.forEach(header => {
+          const td = document.createElement("td");
+          td.textContent = item[header] ?? "";
+          row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+
+      tableContainer.innerHTML = "";
+      tableContainer.appendChild(table);
+
+      if (items.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No matching items found.";
+        tableContainer.appendChild(empty);
+      }
+    }
+
+    addItemForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const newItem = {
+        [partNumberColumn]: document.getElementById("partNumber").value.trim(),
+        [formFactorColumn]: document.getElementById("formFactor").value.trim()
+      };
+
+      catalogItems.push(newItem);
+
+      addItemForm.reset();
+
+      message.textContent =
+        `Added "${newItem[partNumberColumn]}" to the catalog.`;
+
+      renderCatalog();
+    });
+
+    exportButton.addEventListener("click", () => {
+      if (catalogItems.length === 0) {
+        message.textContent = "There is no catalog data to export.";
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(catalogItems, {
+        header: headers
+      });
+
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        currentSheetName || "Catalog"
+      );
+
+      XLSX.writeFile(workbook, "updated_catalog.xlsx", {
+        compression: true
+      });
+
+      message.textContent = "Exported updated_catalog.xlsx.";
+    });
+  </script>
+  </div>
+
+</body>
+</html>

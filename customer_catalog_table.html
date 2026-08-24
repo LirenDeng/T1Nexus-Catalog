@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Catalog</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #ffffff;
+      color: #111827;
+    }
+
+    .catalog-container {
+      width: 100%;
+      padding: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1px solid #cfd4dc;
+    }
+
+    th,
+    td {
+      border: 1px solid #cfd4dc;
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: middle;
+      word-break: break-word;
+    }
+
+    th {
+      background: #f3f4f6;
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    td {
+      font-size: 14px;
+      background: #ffffff;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fafafa;
+    }
+
+    tbody tr:hover td {
+      background: #f5f7fa;
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 50%;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 20%;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 30%;
+    }
+
+    .empty-row td {
+      text-align: center;
+      color: #6b7280;
+      padding: 28px;
+    }
+
+    @media (max-width: 700px) {
+      .catalog-container {
+        padding: 10px;
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 620px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="catalog-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Data Rate</th>
+          <th>Form Factor</th>
+        </tr>
+      </thead>
+
+      <tbody id="catalogBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    /*
+      Add or load catalog items into this array from your backend/database.
+
+      Example:
+      {
+        partNumber: "T1-QSFP28-100G-SR4",
+        dataRate: "100G",
+        formFactor: "QSFP28"
+      }
+    */
+
+    const catalog = [
+      {
+            "partNumber": "T1-OSFP224-1.6T-2DR4",
+            "dataRate": "1.6T",
+            "formFactor": "OSFP224"
+      },
+      {
+            "partNumber": "T1-OSFP224-1.6T-2FR4",
+            "dataRate": "1.6T",
+            "formFactor": "OSFP224"
+      },
+      {
+            "partNumber": "T1-OSFP224-1.6T-DR8",
+            "dataRate": "1.6T",
+            "formFactor": "OSFP224"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-SR8",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-DR8",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2VR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2SR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2XDR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2FR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2LR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-8x100G-8LR1",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2VR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2SR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-SR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-DR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2XDR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-XDR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2FR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-8x100G-8FR1",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2LR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-8x100G-8LR1",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP224-800G-DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP224"
+      },
+      {
+            "partNumber": "T1-LPO-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-DD-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "QSFP112-DD"
+      },
+      {
+            "partNumber": "OBS-T1-OSFP-NDR-O800G-SR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-NDR-800G-SR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-NDR-800G-DR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-NDR-800G-DR8_A2",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-800G-SR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-NDR-800G-SR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-500-OSFP-800G-DR8",
+            "dataRate": "800G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OT-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4-EML-FNT",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4-SiP-FNT",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-LPO-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4-FNT",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1K-LPO-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-LPO-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-NF-OSFP112-800G-2SR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4-IHS",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-800G-2DR4-RHS",
+            "dataRate": "800G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR8",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR4.2-BD",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-XDR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-LR8",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ER4L",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ER4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ZR1",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ZR1+",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ZR1++",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-4x100G-4FR1",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-4x100G-4LR1",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-OSFP56-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-400G-SR8",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-400G-SR4.2-BD",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-4x100G-4FR1",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-4x100G-4LR1",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-OSFP56-2x200G-2FR2",
+            "dataRate": "400G",
+            "formFactor": "OSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-VR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-FR4 (EML)",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-4x100G-4FR1",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-ZR1",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-ZR1+",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-VR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-LPO-QSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-SR8",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR4-NF",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR8-NF",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-4x100G-LR",
+            "dataRate": "400G / 4x100G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR4.2-BDM",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR4.2-BDM",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-ZR++-G",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-XDR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ZR1",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-ZR1+",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-DR4+",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-NF-QSFP56-DD-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-NF-QSFP56-DD-400G-SR8",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-SR8",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-PLR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-SR8",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-VSR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP56-DD-400G-XDR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QDD-400G-ER4L",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-FR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-LR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-SR4.2-BD",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-400G-SRBD",
+            "dataRate": "400G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "US-MY-QSFP56-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "US-QSFP56-DD-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-RL-QSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "US-QSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-OSFP-NDR-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP"
+      },
+      {
+            "partNumber": "T1-AOP-OSFP112-400G-SR4-8M-LIC",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-SR4-NF",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-NF-OSFP112-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-DR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-DR4-RHS",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-DR4-T",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-SR4",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-SR4-T",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-VR4-FLT/RHS",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-OSFP112-400G-XDR4-C",
+            "dataRate": "400G",
+            "formFactor": "OSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-SR4",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-DR4",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-FR4",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP112-200G-DR2",
+            "dataRate": "200G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-200G-SR2",
+            "dataRate": "200G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-DR2",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-DR4",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-SR4",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-SR4_5-25-25",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP56-200G-SR2",
+            "dataRate": "200G",
+            "formFactor": "QSFP56"
+      },
+      {
+            "partNumber": "T1-QSFP-DD-200G-SR8",
+            "dataRate": "200G",
+            "formFactor": "QSFP-DD"
+      },
+      {
+            "partNumber": "T1-QSFP112-200G-DR2",
+            "dataRate": "200G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP112-200G-SR2",
+            "dataRate": "200G",
+            "formFactor": "QSFP112"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BD",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR1.2-BD",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR1.2-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-PSM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ER4L",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-FR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-xx-LR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ER1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ZR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-40/100G-SR-BD",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BD",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR1.2-BD",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR1.2-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-PSM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ER4L",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-FR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-xx-LR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ER1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ZR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-SFP56-DD-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "SFP56-DD"
+      },
+      {
+            "partNumber": "T1-SFP56-DD-100G-ER1",
+            "dataRate": "100G",
+            "formFactor": "SFP56-DD"
+      },
+      {
+            "partNumber": "T1-SFP56-DD-100G-FR1",
+            "dataRate": "100G",
+            "formFactor": "SFP56-DD"
+      },
+      {
+            "partNumber": "T1-SFP56-DD-100G-LR1",
+            "dataRate": "100G",
+            "formFactor": "SFP56-DD"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-BXD-M40KM",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-LR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-PLRL4",
+            "dataRate": "40G / 100G Dual Rate",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SWDM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BD",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BDAR",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR1.2-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-ZR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40/100G-SR-BD",
+            "dataRate": "40G/100G Dual Rate",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-SR1.2-BDM",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40/100G-SR-BD",
+            "dataRate": "40/100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-100G-BIDI",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "TN-QSFP-100G-CWDM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "RLJ-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-AOP-QSFP28-100G-12M",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-NF-QSFP28-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR4AR",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR4JP",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR4JP",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-ant-QSFP28-100G-ZR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM10-27",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM10-29",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM10-31",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM10-33",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-CWDM4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-FR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-LR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR-LC100",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-SR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-ZR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-RL-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "US-QSFP28-100G-LR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "US-T1-QSFP28-100G-PLR4",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "USP-QSFP28-100G-DR1",
+            "dataRate": "100G",
+            "formFactor": "QSFP28"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-SR-BD",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-SR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-CSR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-LX4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-IR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-PLR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-PSM4-2km",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-PSM4-10km",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-LR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-ER4",
+            "dataRate": "40G",
+            "formFactor": "QSFP+"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-SWDM4",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-4X10G-LR",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-LR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-PLRL4",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-SR-BD",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-SR4",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-SR4-LC",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-QSFP-40G-UNIV",
+            "dataRate": "40G",
+            "formFactor": "QSFP"
+      },
+      {
+            "partNumber": "T1-SFP-32G-LR",
+            "dataRate": "32G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-25G-SR",
+            "dataRate": "25G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-10G25G-SR",
+            "dataRate": "25G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-10G25G-XSR",
+            "dataRate": "25G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-10G25G-LR",
+            "dataRate": "25G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-25G-LR",
+            "dataRate": "25G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-25G-ZR",
+            "dataRate": "25G",
+            "formFactor": "SFP28"
+      },
+      {
+            "partNumber": "T1-SFP-25G-BX20-2733-EXT",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-BX20-3327-EXT",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-BX40-2731-EXT",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-BX40-3127-EXT",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-BX80-0995-EXT",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-BX80-9509-EXT",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-LR",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-25G-SR-E",
+            "dataRate": "25G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-10G-BX10-2733",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-BX10-3327",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-BX40-2733",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-BX40-3327",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-T",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-SR",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-LRM",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-LR",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-ER-31",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-ER-55",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-ZR",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-ZR100",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-CWDM10-xx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-CWDM20-xx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-CWDM40-xx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-CWDM80-xx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "20",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-DWDM80-Cxx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-DWDMH40-Cxx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-DWDMH80-Cxx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-DWDMH40-Hxx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-DWDMH80-Hxx",
+            "dataRate": "10G",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-SFP-10G-DWDM100-C53",
+            "dataRate": "10G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-GF855",
+            "dataRate": "10G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "SFP+LR_T",
+            "dataRate": "1G/10G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1GM-T",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-T",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-SX",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-SX2",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-LX10",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-LX20",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-LH40",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-EX40",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-ZX80",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-EZX100",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-EZX120",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-EZX160",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G10G-SR",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G10G-LR",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-CWDM10-xx",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-CWDM20-xx",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-CWDM40-xx",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-CWDM80-xx",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-1G-CWDM120-xx",
+            "dataRate": "1G",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-100M-FX-M",
+            "dataRate": "100M",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-US-SFP-1G-100M-FX-M",
+            "dataRate": "100m",
+            "formFactor": "SFP"
+      },
+      {
+            "partNumber": "T1-SFP-100M-FX",
+            "dataRate": "",
+            "formFactor": ""
+      },
+      {
+            "partNumber": "T1-SFP-10G-ZR+",
+            "dataRate": "",
+            "formFactor": "SFP+"
+      },
+      {
+            "partNumber": "T1-Flexcoder-GEN2-8xQSFP-DD",
+            "dataRate": "N/A",
+            "formFactor": "Programming Tool"
+      }
+];
+
+    function renderCatalog() {
+      const tbody = document.getElementById("catalogBody");
+      tbody.innerHTML = "";
+
+      if (catalog.length === 0) {
+        const row = document.createElement("tr");
+        row.className = "empty-row";
+
+        const cell = document.createElement("td");
+        cell.colSpan = 3;
+        cell.textContent = "No catalog items available.";
+
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+
+      catalog.forEach(item => {
+        const row = document.createElement("tr");
+
+        const partNumber = document.createElement("td");
+        partNumber.textContent = item.partNumber || "";
+
+        const dataRate = document.createElement("td");
+        dataRate.textContent = item.dataRate || "";
+
+        const formFactor = document.createElement("td");
+        formFactor.textContent = item.formFactor || "";
+
+        row.appendChild(partNumber);
+        row.appendChild(dataRate);
+        row.appendChild(formFactor);
+
+        tbody.appendChild(row);
+      });
+    }
+
+    renderCatalog();
+  </script>
+</body>
+</html>
