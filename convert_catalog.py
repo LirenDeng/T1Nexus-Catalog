@@ -3,19 +3,16 @@ import json
 import re
 from openpyxl import load_workbook
 
-# --------------------------------------------------
-# SETTINGS
-# --------------------------------------------------
-
 EXCEL_FILE = Path("catalog.xlsx")
 OUTPUT_FILE = Path("catalog-data.json")
 
-# Use None to load the first worksheet.
-# Or change it to something like:
-# SHEET_NAME = "Xcvrs only"
+# Leave as None to automatically find the worksheet containing the catalog.
+# Or set a specific tab name, e.g. SHEET_NAME = "Xcvrs only"
 SHEET_NAME = None
 
-# The script accepts any of these header names.
+# How many rows at the top of each worksheet to scan for headers.
+HEADER_SCAN_ROWS = 100
+
 PART_NUMBER_HEADERS = {
     "part number",
     "t1nexus part number",
@@ -44,7 +41,6 @@ FORM_FACTOR_HEADERS = {
 
 
 def normalize_header(value):
-    """Normalize Excel header text for flexible matching."""
     if value is None:
         return ""
 
@@ -59,54 +55,109 @@ def normalize_header(value):
     )
 
 
+def clean_cell(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
 def find_column(headers, accepted_headers):
-    """
-    Return the 1-based Excel column number whose header matches
-    one of the accepted names.
-    """
-    normalized_accepted = {
-        normalize_header(name) for name in accepted_headers
-    }
+    accepted = {normalize_header(x) for x in accepted_headers}
 
     for column_number, header in enumerate(headers, start=1):
-        if normalize_header(header) in normalized_accepted:
+        if normalize_header(header) in accepted:
             return column_number
 
     return None
 
 
-def clean_cell(value):
-    if value is None:
-        return ""
+def find_header_row(sheet):
+    """
+    Search the first HEADER_SCAN_ROWS rows for a row that contains
+    Part Number, Data Rate, and Form Factor headers.
+    """
+    max_scan = min(sheet.max_row, HEADER_SCAN_ROWS)
 
-    return str(value).strip()
+    for row_number in range(1, max_scan + 1):
+        headers = [
+            sheet.cell(row=row_number, column=column).value
+            for column in range(1, sheet.max_column + 1)
+        ]
+
+        part_col = find_column(headers, PART_NUMBER_HEADERS)
+        rate_col = find_column(headers, DATA_RATE_HEADERS)
+        form_col = find_column(headers, FORM_FACTOR_HEADERS)
+
+        if part_col and rate_col and form_col:
+            return {
+                "row": row_number,
+                "headers": headers,
+                "part_col": part_col,
+                "rate_col": rate_col,
+                "form_col": form_col,
+            }
+
+    return None
+
+
+def find_catalog_sheet(workbook):
+    """
+    Automatically find the worksheet and header row that contain
+    the three required catalog columns.
+    """
+    if SHEET_NAME:
+        if SHEET_NAME not in workbook.sheetnames:
+            raise ValueError(
+                f'Worksheet "{SHEET_NAME}" was not found. '
+                f"Available sheets: {workbook.sheetnames}"
+            )
+
+        sheet = workbook[SHEET_NAME]
+        header_info = find_header_row(sheet)
+
+        if not header_info:
+            raise ValueError(
+                f'Could not find Part Number, Data Rate, and Form Factor '
+                f'headers in the first {HEADER_SCAN_ROWS} rows of '
+                f'worksheet "{SHEET_NAME}".'
+            )
+
+        return sheet, header_info
+
+    # Auto-detect across all tabs
+    for sheet_name in workbook.sheetnames:
+        sheet = workbook[sheet_name]
+        header_info = find_header_row(sheet)
+
+        if header_info:
+            return sheet, header_info
+
+    raise ValueError(
+        "Could not find a worksheet containing all three required headers: "
+        "Part Number, Data Rate, and Form Factor. "
+        f"Searched the first {HEADER_SCAN_ROWS} rows of these worksheets: "
+        + ", ".join(workbook.sheetnames)
+    )
 
 
 def data_rate_value(rate):
     """
-    Convert data rates to a numeric value so they can be sorted
-    largest to smallest.
+    Numeric value used for sorting largest to smallest.
 
     Examples:
-      1.6T   -> 1,600,000
-      800G   ->   800,000
-      100G   ->   100,000
-      25G    ->    25,000
-      1G     ->     1,000
-      100M   ->       100
+      1.6T -> 1,600,000
+      800G ->   800,000
+      100G ->   100,000
+      100M ->       100
 
-    For dual-rate values such as 40G/100G, the largest rate is used.
-    Blank and N/A values go to the bottom.
+    For values such as 40G/100G, the largest stated rate is used.
     """
     text = clean_cell(rate).upper()
 
     if not text or text == "N/A":
         return -1
 
-    matches = re.findall(
-        r"(\d+(?:\.\d+)?)\s*(T|G|M|K)?",
-        text
-    )
+    matches = re.findall(r"(\d+(?:\.\d+)?)\s*(T|G|M|K)?", text)
 
     if not matches:
         return -1
@@ -133,96 +184,45 @@ def main():
     if not EXCEL_FILE.exists():
         raise FileNotFoundError(
             f"Could not find {EXCEL_FILE}. "
-            "Put catalog.xlsx in the same folder as this script."
+            "Make sure catalog.xlsx is in the repository root."
         )
 
     workbook = load_workbook(
         EXCEL_FILE,
         read_only=True,
-        data_only=True
+        data_only=True,
     )
 
-    if SHEET_NAME:
-        if SHEET_NAME not in workbook.sheetnames:
-            raise ValueError(
-                f'Worksheet "{SHEET_NAME}" was not found. '
-                f"Available sheets: {workbook.sheetnames}"
-            )
+    sheet, header_info = find_catalog_sheet(workbook)
 
-        sheet = workbook[SHEET_NAME]
-    else:
-        sheet = workbook[workbook.sheetnames[0]]
+    header_row = header_info["row"]
+    part_number_column = header_info["part_col"]
+    data_rate_column = header_info["rate_col"]
+    form_factor_column = header_info["form_col"]
 
-    # Assume the first row contains the headers.
-    headers = [
-        sheet.cell(row=1, column=column).value
-        for column in range(1, sheet.max_column + 1)
-    ]
-
-    part_number_column = find_column(
-        headers,
-        PART_NUMBER_HEADERS
+    print(f'Catalog worksheet: "{sheet.title}"')
+    print(f"Header row: {header_row}")
+    print(
+        "Columns: "
+        f"Part Number={part_number_column}, "
+        f"Data Rate={data_rate_column}, "
+        f"Form Factor={form_factor_column}"
     )
-
-    data_rate_column = find_column(
-        headers,
-        DATA_RATE_HEADERS
-    )
-
-    form_factor_column = find_column(
-        headers,
-        FORM_FACTOR_HEADERS
-    )
-
-    missing = []
-
-    if not part_number_column:
-        missing.append("Part Number")
-
-    if not data_rate_column:
-        missing.append("Data Rate")
-
-    if not form_factor_column:
-        missing.append("Form Factor")
-
-    if missing:
-        raise ValueError(
-            "Missing required column(s): "
-            + ", ".join(missing)
-            + "\nHeaders found: "
-            + ", ".join(clean_cell(header) for header in headers)
-        )
 
     catalog = []
 
-    for row_number in range(2, sheet.max_row + 1):
+    for row_number in range(header_row + 1, sheet.max_row + 1):
         part_number = clean_cell(
-            sheet.cell(
-                row=row_number,
-                column=part_number_column
-            ).value
+            sheet.cell(row=row_number, column=part_number_column).value
         )
-
         data_rate = clean_cell(
-            sheet.cell(
-                row=row_number,
-                column=data_rate_column
-            ).value
+            sheet.cell(row=row_number, column=data_rate_column).value
         )
-
         form_factor = clean_cell(
-            sheet.cell(
-                row=row_number,
-                column=form_factor_column
-            ).value
+            sheet.cell(row=row_number, column=form_factor_column).value
         )
 
-        # Skip completely blank rows.
-        if not part_number and not data_rate and not form_factor:
-            continue
-
-        # Skip rows without a part number so customers do not
-        # see blank catalog entries.
+        # Customer catalog should not contain blank part numbers.
         if not part_number:
             continue
 
@@ -232,27 +232,20 @@ def main():
             "formFactor": form_factor,
         })
 
-    # Sort largest data rate to smallest.
-    # Python's sort is stable, so equal-rate products keep
-    # their original Excel order.
+    # Largest data rate first.
+    # Stable sort preserves Excel order within the same data rate.
     catalog.sort(
         key=lambda item: data_rate_value(item["dataRate"]),
         reverse=True,
     )
 
     OUTPUT_FILE.write_text(
-        json.dumps(
-            catalog,
-            indent=2,
-            ensure_ascii=False,
-        )
-        + "\n",
+        json.dumps(catalog, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
     print(
-        f"Generated {OUTPUT_FILE} "
-        f"with {len(catalog)} catalog items."
+        f"Generated {OUTPUT_FILE} with {len(catalog)} catalog items."
     )
 
 
