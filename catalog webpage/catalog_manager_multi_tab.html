@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalog Manager</title>
+
+  <!-- SheetJS: read and write Excel files in the browser -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .container {
+      width: min(1400px, 94%);
+      margin: 32px auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .header p {
+      margin: 6px 0 0;
+      color: #6b7280;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: auto minmax(180px, 260px) minmax(240px, 1fr) minmax(220px, 320px) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 9px;
+      background: white;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: #2563eb;
+    }
+
+    button,
+    .file-label {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .secondary {
+      background: #111827;
+      color: white;
+    }
+
+    .light {
+      background: #eef2f7;
+      color: #1f2937;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .stats {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      color: #4b5563;
+      font-size: 14px;
+    }
+
+    .add-form {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 160px auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4b5563;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 65vh;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f9fafb;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    @media (max-width: 900px) {
+      .toolbar,
+      .add-form {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Catalog Manager</h1>
+        <p>Import an Excel catalog, search it, sort it, add items, and export the updated catalog.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="toolbar">
+        <label class="file-label primary">
+          Import Excel
+          <input id="excelFile" type="file" accept=".xlsx,.xls,.xlsm,.csv" />
+        </label>
+
+        <select id="sheetSelect" disabled>
+          <option value="">Choose worksheet</option>
+        </select>
+
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Search by name or part number..."
+        />
+
+        <select id="sortSelect">
+          <option value="">Sort items</option>
+          <option value="name-asc">Name: A → Z</option>
+          <option value="name-desc">Name: Z → A</option>
+          <option value="qty-desc">Quantity: High → Low</option>
+          <option value="qty-asc">Quantity: Low → High</option>
+        </select>
+
+        <button id="exportButton" class="secondary">Export Excel</button>
+      </div>
+
+      <div class="stats">
+        <span>Total items: <strong id="totalCount">0</strong></span>
+        <span>Showing: <strong id="visibleCount">0</strong></span>
+        <span>Worksheet: <strong id="sheetName">None</strong></span>
+      </div>
+
+      <div id="message" class="message">
+        Import an Excel file to begin.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top: 0;">Add New Item</h2>
+
+      <form id="addItemForm" class="add-form">
+        <div class="field">
+          <label for="partNumber">Part Number</label>
+          <input id="partNumber" type="text" placeholder="Example: T1-QSFP28-100G-SR4" />
+        </div>
+
+        <div class="field">
+          <label for="itemName">Name</label>
+          <input id="itemName" type="text" placeholder="Product name or description" required />
+        </div>
+
+        <div class="field">
+          <label for="quantity">Quantity</label>
+          <input id="quantity" type="number" min="0" step="1" value="0" required />
+        </div>
+
+        <button type="submit" class="primary">Add Item</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div id="tableContainer">
+        <div class="empty">No catalog loaded yet.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let catalogItems = [];
+    let headers = [];
+    let currentSheetName = "";
+    let currentWorkbook = null;
+
+    // Detected catalog columns
+    let nameColumn = "";
+    let quantityColumn = "";
+    let partNumberColumn = "";
+
+    const excelFile = document.getElementById("excelFile");
+    const sheetSelect = document.getElementById("sheetSelect");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const exportButton = document.getElementById("exportButton");
+    const addItemForm = document.getElementById("addItemForm");
+
+    const totalCount = document.getElementById("totalCount");
+    const visibleCount = document.getElementById("visibleCount");
+    const sheetName = document.getElementById("sheetName");
+    const tableContainer = document.getElementById("tableContainer");
+    const message = document.getElementById("message");
+
+    function normalizeHeader(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_\-]+/g, " ")
+        .replace(/\s+/g, " ");
+    }
+
+    function detectColumn(possibleNames) {
+      const normalizedPossible = possibleNames.map(normalizeHeader);
+
+      return headers.find(header =>
+        normalizedPossible.includes(normalizeHeader(header))
+      ) || "";
+    }
+
+    function detectCatalogColumns() {
+      nameColumn = detectColumn([
+        "name",
+        "product name",
+        "item name",
+        "part name",
+        "description",
+        "product description"
+      ]);
+
+      quantityColumn = detectColumn([
+        "quantity",
+        "qty",
+        "q'ty",
+        "inventory",
+        "stock",
+        "count"
+      ]);
+
+      partNumberColumn = detectColumn([
+        "part number",
+        "part no",
+        "part no.",
+        "pn",
+        "t1 pn",
+        "sku",
+        "item number"
+      ]);
+    }
+
+    function ensureDefaultColumns() {
+      if (headers.length === 0) {
+        headers = ["Part Number", "Name", "Quantity"];
+      }
+
+      detectCatalogColumns();
+
+      if (!partNumberColumn) {
+        headers.push("Part Number");
+        partNumberColumn = "Part Number";
+      }
+
+      if (!nameColumn) {
+        headers.push("Name");
+        nameColumn = "Name";
+      }
+
+      if (!quantityColumn) {
+        headers.push("Quantity");
+        quantityColumn = "Quantity";
+      }
+    }
+
+    excelFile.addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const data = await file.arrayBuffer();
+        currentWorkbook = XLSX.read(data);
+
+        sheetSelect.innerHTML = '<option value="">Choose worksheet</option>';
+
+        currentWorkbook.SheetNames.forEach(sheet => {
+          const option = document.createElement("option");
+          option.value = sheet;
+          option.textContent = sheet;
+          sheetSelect.appendChild(option);
+        });
+
+        sheetSelect.disabled = false;
+
+        catalogItems = [];
+        headers = [];
+        currentSheetName = "";
+        sheetName.textContent = "None";
+        totalCount.textContent = "0";
+        visibleCount.textContent = "0";
+        tableContainer.innerHTML =
+          '<div class="empty">Choose a worksheet to load its catalog items.</div>';
+
+        message.textContent =
+          `Loaded "${file.name}". Choose one of its ${currentWorkbook.SheetNames.length} worksheet(s).`;
+      } catch (error) {
+        console.error(error);
+        currentWorkbook = null;
+        sheetSelect.disabled = true;
+        message.textContent = "Could not read the Excel file. Check the file and try again.";
+      }
+    });
+
+    sheetSelect.addEventListener("change", () => {
+      const selectedSheet = sheetSelect.value;
+
+      if (!selectedSheet || !currentWorkbook) {
+        return;
+      }
+
+      currentSheetName = selectedSheet;
+      const worksheet = currentWorkbook.Sheets[currentSheetName];
+
+      catalogItems = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (catalogItems.length > 0) {
+        headers = Object.keys(catalogItems[0]);
+      } else {
+        const rows = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          defval: ""
+        });
+
+        headers = rows.length
+          ? rows[0].filter(value => String(value).trim() !== "")
+          : [];
+      }
+
+      ensureDefaultColumns();
+
+      catalogItems = catalogItems.map(item => {
+        const normalizedItem = {};
+        headers.forEach(header => {
+          normalizedItem[header] = item[header] ?? "";
+        });
+        return normalizedItem;
+      });
+
+      searchInput.value = "";
+      sortSelect.value = "";
+
+      sheetName.textContent = currentSheetName;
+      message.textContent =
+        `Loaded worksheet "${currentSheetName}". Detected name column: ` +
+        `"${nameColumn}", quantity column: "${quantityColumn}".`;
+
+      renderCatalog();
+    });
+
+    searchInput.addEventListener("input", renderCatalog);
+    sortSelect.addEventListener("change", renderCatalog);
+
+    function getNumericQuantity(item) {
+      const raw = item[quantityColumn];
+      const value = Number(String(raw ?? "").replace(/,/g, "").trim());
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function getFilteredAndSortedItems() {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      let result = [...catalogItems];
+
+      if (searchTerm) {
+        result = result.filter(item => {
+          const name = String(item[nameColumn] ?? "").toLowerCase();
+          const pn = String(item[partNumberColumn] ?? "").toLowerCase();
+
+          return name.includes(searchTerm) || pn.includes(searchTerm);
+        });
+      }
+
+      switch (sortSelect.value) {
+        case "name-asc":
+          result.sort((a, b) =>
+            String(a[nameColumn] ?? "").localeCompare(
+              String(b[nameColumn] ?? ""),
+              undefined,
+              { numeric: true, sensitivity: "base" }
+            )
+          );
+          break;
+
+        case "name-desc":
+          result.sort((a, b) =>
+            String(b[nameColumn] ?? "").localeCompare(
+              String(a[nameColumn] ?? ""),
+              undefined,
+              { numeric: true, sensitivity: "base" }
+            )
+          );
+          break;
+
+        case "qty-desc":
+          result.sort((a, b) => getNumericQuantity(b) - getNumericQuantity(a));
+          break;
+
+        case "qty-asc":
+          result.sort((a, b) => getNumericQuantity(a) - getNumericQuantity(b));
+          break;
+      }
+
+      return result;
+    }
+
+    function renderCatalog() {
+      const items = getFilteredAndSortedItems();
+
+      totalCount.textContent = catalogItems.length;
+      visibleCount.textContent = items.length;
+
+      if (headers.length === 0) {
+        tableContainer.innerHTML =
+          '<div class="empty">No catalog loaded yet.</div>';
+        return;
+      }
+
+      const table = document.createElement("table");
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      headers.forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      items.forEach(item => {
+        const row = document.createElement("tr");
+
+        headers.forEach(header => {
+          const td = document.createElement("td");
+          td.textContent = item[header] ?? "";
+          row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+
+      tableContainer.innerHTML = "";
+      tableContainer.appendChild(table);
+
+      if (items.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No matching items found.";
+        tableContainer.appendChild(empty);
+      }
+    }
+
+    addItemForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      ensureDefaultColumns();
+
+      const newItem = {};
+      headers.forEach(header => {
+        newItem[header] = "";
+      });
+
+      newItem[partNumberColumn] =
+        document.getElementById("partNumber").value.trim();
+
+      newItem[nameColumn] =
+        document.getElementById("itemName").value.trim();
+
+      newItem[quantityColumn] =
+        Number(document.getElementById("quantity").value || 0);
+
+      catalogItems.push(newItem);
+
+      addItemForm.reset();
+      document.getElementById("quantity").value = 0;
+
+      message.textContent = `Added "${newItem[nameColumn]}" to the catalog.`;
+      renderCatalog();
+    });
+
+    exportButton.addEventListener("click", () => {
+      if (catalogItems.length === 0) {
+        message.textContent = "There is no catalog data to export.";
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(catalogItems, {
+        header: headers
+      });
+
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        currentSheetName || "Catalog"
+      );
+
+      XLSX.writeFile(workbook, "updated_catalog.xlsx", {
+        compression: true
+      });
+
+      message.textContent = "Exported updated_catalog.xlsx.";
+    });
+  </script>
+</body>
+</html>
