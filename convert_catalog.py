@@ -48,6 +48,7 @@ FORM_FACTOR_HEADERS = {
 }
 
 
+# cleans up a header so different formatting still matches
 def normalize_header(value):
     if value is None:
         return ""
@@ -63,12 +64,14 @@ def normalize_header(value):
     )
 
 
+# cleans up a cell value and turns empty cells into an empty string
 def clean_cell(value):
     if value is None:
         return ""
     return str(value).strip()
 
 
+# finds which column matches one of the accepted header names
 def find_column(headers, accepted_headers):
     accepted = {normalize_header(x) for x in accepted_headers}
 
@@ -79,6 +82,7 @@ def find_column(headers, accepted_headers):
     return None
 
 
+# looks through the top rows of a sheet to find the catalog header row
 def find_header_row(sheet):
     """
     search the first HEADER_SCAN_ROWS rows for a row that contains
@@ -110,6 +114,7 @@ def find_header_row(sheet):
     return None
 
 
+# finds the worksheet that contains all of the catalog columns we need
 def find_catalog_sheet(workbook):
     """
     Automatically find the worksheet and header row that contain
@@ -150,6 +155,7 @@ def find_catalog_sheet(workbook):
     )
 
 
+# converts a data rate into a number so the catalog can be sorted correctly
 def data_rate_value(rate):
     """Numeric value used for sorting largest to smallest."""
     text = clean_cell(rate).upper()
@@ -180,6 +186,7 @@ def data_rate_value(rate):
     return max(values)
 
 
+# runs the full process of reading Excel and creating catalog-data.json
 def main():
     if not EXCEL_FILE.exists():
         raise FileNotFoundError(
