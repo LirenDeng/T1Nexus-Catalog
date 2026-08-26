@@ -6,8 +6,8 @@ from openpyxl import load_workbook
 EXCEL_FILE = Path("catalog.xlsx")
 OUTPUT_FILE = Path("catalog-data.json")
 
-# Leave as None to automatically find the worksheet containing the catalog.
-# Or set a specific tab name, e.g. SHEET_NAME = "Xcvrs only"
+#leave as None to automatically find the worksheet containing the catalog.
+#or set a specific tab name, e.g. SHEET_NAME = "Xcvrs only"
 SHEET_NAME = None
 
 # How many rows at the top of each worksheet to scan for headers.
@@ -81,8 +81,8 @@ def find_column(headers, accepted_headers):
 
 def find_header_row(sheet):
     """
-    Search the first HEADER_SCAN_ROWS rows for a row that contains
-    Part Number, Product Description, Data Rate, and Form Factor headers.
+    search the first HEADER_SCAN_ROWS rows for a row that contains
+    part Number, product Description, data Rate, and form factor headers.
     """
     max_scan = min(sheet.max_row, HEADER_SCAN_ROWS)
 
