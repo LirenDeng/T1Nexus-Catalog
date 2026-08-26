@@ -24,6 +24,14 @@ PART_NUMBER_HEADERS = {
     "item number",
 }
 
+PRODUCT_DESCRIPTION_HEADERS = {
+    "product description",
+    "description",
+    "product desc",
+    "product desc.",
+    "item description",
+}
+
 DATA_RATE_HEADERS = {
     "data rate",
     "datarate",
@@ -74,7 +82,7 @@ def find_column(headers, accepted_headers):
 def find_header_row(sheet):
     """
     Search the first HEADER_SCAN_ROWS rows for a row that contains
-    Part Number, Data Rate, and Form Factor headers.
+    Part Number, Product Description, Data Rate, and Form Factor headers.
     """
     max_scan = min(sheet.max_row, HEADER_SCAN_ROWS)
 
@@ -85,14 +93,16 @@ def find_header_row(sheet):
         ]
 
         part_col = find_column(headers, PART_NUMBER_HEADERS)
+        description_col = find_column(headers, PRODUCT_DESCRIPTION_HEADERS)
         rate_col = find_column(headers, DATA_RATE_HEADERS)
         form_col = find_column(headers, FORM_FACTOR_HEADERS)
 
-        if part_col and rate_col and form_col:
+        if part_col and description_col and rate_col and form_col:
             return {
                 "row": row_number,
                 "headers": headers,
                 "part_col": part_col,
+                "description_col": description_col,
                 "rate_col": rate_col,
                 "form_col": form_col,
             }
@@ -103,7 +113,7 @@ def find_header_row(sheet):
 def find_catalog_sheet(workbook):
     """
     Automatically find the worksheet and header row that contain
-    the three required catalog columns.
+    the four required catalog columns.
     """
     if SHEET_NAME:
         if SHEET_NAME not in workbook.sheetnames:
@@ -117,9 +127,9 @@ def find_catalog_sheet(workbook):
 
         if not header_info:
             raise ValueError(
-                f'Could not find Part Number, Data Rate, and Form Factor '
-                f'headers in the first {HEADER_SCAN_ROWS} rows of '
-                f'worksheet "{SHEET_NAME}".'
+                f'Could not find Part Number, Product Description, Data Rate, '
+                f'and Form Factor headers in the first {HEADER_SCAN_ROWS} rows '
+                f'of worksheet "{SHEET_NAME}".'
             )
 
         return sheet, header_info
@@ -133,25 +143,15 @@ def find_catalog_sheet(workbook):
             return sheet, header_info
 
     raise ValueError(
-        "Could not find a worksheet containing all three required headers: "
-        "Part Number, Data Rate, and Form Factor. "
+        "Could not find a worksheet containing all four required headers: "
+        "Part Number, Product Description, Data Rate, and Form Factor. "
         f"Searched the first {HEADER_SCAN_ROWS} rows of these worksheets: "
         + ", ".join(workbook.sheetnames)
     )
 
 
 def data_rate_value(rate):
-    """
-    Numeric value used for sorting largest to smallest.
-
-    Examples:
-      1.6T -> 1,600,000
-      800G ->   800,000
-      100G ->   100,000
-      100M ->       100
-
-    For values such as 40G/100G, the largest stated rate is used.
-    """
+    """Numeric value used for sorting largest to smallest."""
     text = clean_cell(rate).upper()
 
     if not text or text == "N/A":
@@ -197,6 +197,7 @@ def main():
 
     header_row = header_info["row"]
     part_number_column = header_info["part_col"]
+    product_description_column = header_info["description_col"]
     data_rate_column = header_info["rate_col"]
     form_factor_column = header_info["form_col"]
 
@@ -205,6 +206,7 @@ def main():
     print(
         "Columns: "
         f"Part Number={part_number_column}, "
+        f"Product Description={product_description_column}, "
         f"Data Rate={data_rate_column}, "
         f"Form Factor={form_factor_column}"
     )
@@ -214,6 +216,9 @@ def main():
     for row_number in range(header_row + 1, sheet.max_row + 1):
         part_number = clean_cell(
             sheet.cell(row=row_number, column=part_number_column).value
+        )
+        product_description = clean_cell(
+            sheet.cell(row=row_number, column=product_description_column).value
         )
         data_rate = clean_cell(
             sheet.cell(row=row_number, column=data_rate_column).value
@@ -228,6 +233,7 @@ def main():
 
         catalog.append({
             "partNumber": part_number,
+            "productDescription": product_description,
             "dataRate": data_rate,
             "formFactor": form_factor,
         })

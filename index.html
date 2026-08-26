@@ -20,6 +20,7 @@
     .catalog-container {
       width: 100%;
       padding: 24px;
+      overflow-x: auto;
     }
 
     table {
@@ -60,23 +61,38 @@
 
     th:nth-child(1),
     td:nth-child(1) {
-      width: 50%;
+      width: 25%;
     }
 
     th:nth-child(2),
     td:nth-child(2) {
-      width: 20%;
+      width: 45%;
     }
 
     th:nth-child(3),
     td:nth-child(3) {
-      width: 30%;
+      width: 12%;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 18%;
     }
 
     .message-row td {
       text-align: center;
       color: #6b7280;
       padding: 30px;
+    }
+
+    @media (max-width: 800px) {
+      .catalog-container {
+        padding: 10px;
+      }
+
+      table {
+        min-width: 900px;
+      }
     }
   </style>
 </head>
@@ -88,6 +104,7 @@
       <thead>
         <tr>
           <th>Part Number</th>
+          <th>Product Description</th>
           <th>Data Rate</th>
           <th>Form Factor</th>
         </tr>
@@ -95,7 +112,7 @@
 
       <tbody id="catalogBody">
         <tr class="message-row">
-          <td colspan="3">Loading catalog...</td>
+          <td colspan="4">Loading catalog...</td>
         </tr>
       </tbody>
     </table>
@@ -121,7 +138,7 @@
         if (!catalog.length) {
           tbody.innerHTML = `
             <tr class="message-row">
-              <td colspan="3">No catalog items available.</td>
+              <td colspan="4">No catalog items available.</td>
             </tr>
           `;
           return;
@@ -133,6 +150,9 @@
           const partNumber = document.createElement("td");
           partNumber.textContent = item.partNumber || "";
 
+          const productDescription = document.createElement("td");
+          productDescription.textContent = item.productDescription || "";
+
           const dataRate = document.createElement("td");
           dataRate.textContent = item.dataRate || "";
 
@@ -140,6 +160,7 @@
           formFactor.textContent = item.formFactor || "";
 
           row.appendChild(partNumber);
+          row.appendChild(productDescription);
           row.appendChild(dataRate);
           row.appendChild(formFactor);
 
@@ -151,7 +172,7 @@
 
         tbody.innerHTML = `
           <tr class="message-row">
-            <td colspan="3">Catalog temporarily unavailable.</td>
+            <td colspan="4">Catalog temporarily unavailable.</td>
           </tr>
         `;
       }
